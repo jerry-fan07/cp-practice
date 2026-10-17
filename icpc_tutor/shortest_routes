@@ -1,0 +1,46 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int n, m;
+    cin >> n >> m;
+    vector<unordered_map<int, int>> adj(n, unordered_map<int, int>());
+    while (m--){
+        int a, b, c;
+        cin >> a >> b >> c;
+        if (adj[a-1].count(b-1) > 0){
+            adj[a-1][b-1] = min(adj[a-1][b-1], c);
+        } else {
+            adj[a-1][b-1] = c;
+        }
+    }
+    vector<long long> shortest(n, LLONG_MAX);
+    pair<int, long long> minval = {0, LLONG_MAX}; // first = index, second = weight from 0
+    auto cmp = [](const auto& a, const auto& b){
+        return a.second > b.second;
+    };
+    shortest[0] = 0;
+
+    priority_queue<pair<int, long long>, vector<pair<int, long long>>, decltype(cmp)> minHeap(cmp); // map of leaf indices, weight from 0
+    minHeap.push({0, 0});
+    
+    while (minHeap.size() > 0){
+        auto min = minHeap.top();
+        minHeap.pop();
+        for (auto& pair: adj[min.first]){
+            // pair.first = index, pair.second = weight from minval index
+            if (shortest[pair.first] > min.second + pair.second){
+                shortest[pair.first] = min.second + pair.second;
+                minHeap.push({pair.first, min.second+pair.second});
+            }
+        }
+    }
+    for (long long &x: shortest){
+        cout << x << ' ';
+    }
+    // save current shortest, shortest coming out is definitely in set of shortest
+    // find
+    return 0;
+}
