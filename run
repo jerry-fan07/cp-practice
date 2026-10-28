@@ -1,0 +1,45 @@
+#!/bin/zsh
+# Compile (only when the source changed) and run a C++ solution with sanitizers on.
+#   ./run path/to/foo.cpp             input from path/to/foo.in if it exists, else type it (Ctrl-D to end)
+#   ./run path/to/foo.cpp input.txt   input from a specific file
+#   pbpaste | ./run path/to/foo.cpp   input from the clipboard
+set -euo pipefail
+zmodload zsh/datetime
+
+CXX=/opt/homebrew/bin/g++-16
+CXXFLAGS=(-std=gnu++20 -g -O0 -Wall -Wextra -Wshadow -D_GLIBCXX_ASSERTIONS -fsanitize=address,undefined)
+
+if (( # < 1 || # > 2 )); then
+  sed -n '3,5s/^#//p' $0 >&2
+  exit 1
+fi
+[[ -f $1 ]] || { print -u2 "no such file: $1"; exit 1 }
+
+root=${0:A:h}
+src=${1:A}
+rel=${src#$root/}
+bin=$root/build/${rel:r}
+
+# Binaries mirror the source tree under build/, so same-named files in different folders don't clash.
+if [[ ! -x $bin || $src -nt $bin || $0 -nt $bin ]]; then
+  mkdir -p ${bin:h}
+  print -u2 "compiling $rel"
+  $CXX $CXXFLAGS $src -o $bin
+fi
+
+input=${2:-}
+if [[ -z $input && -t 0 && -f ${1:r}.in ]]; then
+  input=${1:r}.in
+fi
+if [[ -n $input ]]; then
+  print -u2 "input: $input"
+  exec < $input
+elif [[ -t 0 ]]; then
+  print -u2 "type input, then Ctrl-D"
+fi
+
+start=$EPOCHREALTIME
+code=0
+$bin || code=$?
+printf -- '--- exit %d, %.3fs\n' $code $(( EPOCHREALTIME - start )) >&2
+exit $code
