@@ -4,6 +4,8 @@ using namespace std;
 vector<unordered_set<int>> adj;
 vector<bool> matched;
 
+// greedy algorithm exchange proof
+
 void solve(){
     deque<int> queue;
     for (int i = 0; i < adj.size(); i++){
